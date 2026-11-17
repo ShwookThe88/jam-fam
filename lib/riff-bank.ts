@@ -1,0 +1,5 @@
+export type RiffClip={id:string;name:string;kind:string;notes:string;created:number;duration:number;blob:Blob};
+function openBank():Promise<IDBDatabase>{return new Promise((resolve,reject)=>{const r=indexedDB.open('jam-fam-riff-bank',1);r.onupgradeneeded=()=>{r.result.createObjectStore('clips',{keyPath:'id'})};r.onerror=()=>reject(r.error);r.onsuccess=()=>resolve(r.result)})}
+export async function saveClip(clip:RiffClip){const db=await openBank();try{await new Promise<void>((resolve,reject)=>{const tx=db.transaction('clips','readwrite');tx.objectStore('clips').put(clip);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error)})}finally{db.close()}}
+export async function readClips(){const db=await openBank();try{return await new Promise<RiffClip[]>((resolve,reject)=>{const r=db.transaction('clips','readonly').objectStore('clips').getAll();r.onsuccess=()=>resolve((r.result as RiffClip[]).sort((a,b)=>b.created-a.created));r.onerror=()=>reject(r.error)})}finally{db.close()}}
+export function clipExtension(type:string){return type.includes('mp4')?'.m4a':type.includes('ogg')?'.ogg':type.includes('wav')?'.wav':'.webm'}
